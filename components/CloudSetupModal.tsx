@@ -156,7 +156,7 @@ const CloudSetupModal: React.FC<CloudSetupModalProps> = ({ isOpen, onClose, onCo
         <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <FileSpreadsheet className="w-6 h-6 text-emerald-600" /> {t('cloud_setup')}
+              <FileSpreadsheet className="w-6 h-6 text-indigo-600" /> {t('cloud_setup')}
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">Store your data in your own Google Spreadsheet.</p>
           </div>
@@ -173,8 +173,8 @@ const CloudSetupModal: React.FC<CloudSetupModalProps> = ({ isOpen, onClose, onCo
             </div>
           )}
 
-          <div className="bg-emerald-50 dark:bg-emerald-900/10 p-5 rounded-xl border border-emerald-100 dark:border-emerald-800/50">
-            <h3 className="text-xs font-bold text-emerald-800 dark:text-emerald-400 uppercase mb-3 flex items-center gap-2">
+          <div className="bg-indigo-50 dark:bg-indigo-900/10 p-5 rounded-xl border border-indigo-100 dark:border-indigo-800/50">
+            <h3 className="text-xs font-bold text-indigo-800 dark:text-indigo-400 uppercase mb-3 flex items-center gap-2">
               <ExternalLink className="w-3.5 h-3.5" /> Setup Steps:
             </h3>
             <ol className="list-decimal list-inside text-xs text-slate-700 dark:text-slate-300 space-y-2 mb-4 leading-relaxed">
@@ -194,7 +194,7 @@ const CloudSetupModal: React.FC<CloudSetupModalProps> = ({ isOpen, onClose, onCo
             
             <button 
               onClick={handleCopyCode}
-              className="w-full flex items-center justify-center gap-2 py-3 bg-white dark:bg-slate-800 border-2 border-emerald-200 dark:border-emerald-800 rounded-xl text-xs font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest hover:bg-emerald-50 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm"
+              className="w-full flex items-center justify-center gap-2 py-3 bg-white dark:bg-slate-800 border-2 border-indigo-200 dark:border-indigo-800 rounded-xl text-xs font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-widest hover:bg-indigo-50 dark:hover:bg-slate-700 transition-all active:scale-95 shadow-sm"
             >
               {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               {copied ? 'Code Copied!' : 'Copy Script Code'}
@@ -207,7 +207,7 @@ const CloudSetupModal: React.FC<CloudSetupModalProps> = ({ isOpen, onClose, onCo
               type="text"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="w-full h-12 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-emerald-500 font-mono transition-all"
+              className="w-full h-12 px-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-indigo-500 font-mono transition-all"
               placeholder="https://script.google.com/macros/s/.../exec"
             />
           </div>
@@ -222,7 +222,7 @@ const CloudSetupModal: React.FC<CloudSetupModalProps> = ({ isOpen, onClose, onCo
           <button 
             disabled={!url.trim()}
             onClick={handleConnect}
-            className="px-6 py-2 text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-lg shadow-emerald-600/20 disabled:opacity-50 transition-all active:scale-95"
+            className="px-6 py-2 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg shadow-lg shadow-indigo-600/20 disabled:opacity-50 transition-all active:scale-95"
           >
             {isReady ? 'Update Connection' : 'Connect Now'}
           </button>
