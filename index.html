@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+    <meta name="theme-color" content="#047857" id="theme-meta" />
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>TMSS Bill Splitter</title>
+    <link rel="manifest" href="/manifest.json" />
+    <link apple-touch-icon href="https://cdn-icons-png.flaticon.com/512/2933/2933886.png" />
+    
+    <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "react-dom": "https://esm.sh/react-dom@18.2.0",
+    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+    "lucide-react": "https://esm.sh/lucide-react@0.263.1?deps=react@18.2.0",
+    "html2canvas": "https://esm.sh/html2canvas@1.4.1",
+    "jspdf": "https://esm.sh/jspdf@2.5.1",
+    "vite": "https://aistudiocdn.com/vite@^7.2.7",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.2",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/",
+    "recharts": "https://esm.sh/recharts@2.12.0?external=react,react-dom",
+    "tesseract.js": "https://esm.sh/tesseract.js@5.0.3",
+    "firebase/": "https://esm.sh/firebase@^12.7.0/",
+    "@capacitor/status-bar": "https://esm.sh/@capacitor/status-bar@^8.0.0"
+  }
+}
+</script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            backdropBlur: {
+              'xs': '2px',
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+      
+      :root {
+        --emerald-700: #047857;
+        --slate-900: #020617;
+      }
+
+      html {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        background-color: #047857;
+        overflow: hidden;
+      }
+
+      html.dark {
+        background-color: #020617;
+      }
+
+      body {
+        font-family: 'Inter', sans-serif;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        overscroll-behavior-y: none;
+        background-color: #f8fafc;
+        position: relative;
+      }
+      
+      .dark body {
+        background: linear-gradient(135deg, #020617 0%, #0f172a 100%);
+      }
+
+      /* Aurora Blobs */
+      body::before, body::after {
+        content: '';
+        position: fixed;
+        width: 300px;
+        height: 300px;
+        border-radius: 50%;
+        filter: blur(80px);
+        z-index: -1;
+        opacity: 0.15;
+        pointer-events: none;
+      }
+
+      .dark body::before {
+        top: -50px;
+        left: -50px;
+        background: #10b981;
+      }
+      .dark body::after {
+        bottom: -50px;
+        right: -50px;
+        background: #6366f1;
+      }
+      
+      #root {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        position: relative;
+      }
+
+      .pt-safe { padding-top: env(safe-area-inset-top); }
+      @media (max-width: 768px) {
+        .pt-safe { padding-top: max(24px, env(safe-area-inset-top)); }
+      }
+      .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+
+      ::-webkit-scrollbar { display: none; }
+
+      /* Hide spin buttons in number inputs */
+      input[type=number]::-webkit-inner-spin-button,
+      input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+      input[type=number] {
+        -moz-appearance: textfield;
+      }
+
+      /* Glass Classes */
+      .glass-card {
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(20px);
+        border: 0.5px solid rgba(0, 0, 0, 0.05);
+      }
+      .dark .glass-card {
+        background: rgba(15, 23, 42, 0.6);
+        backdrop-filter: blur(24px);
+        border: 0.5px solid rgba(255, 255, 255, 0.12);
+      }
+    </style>
+  </head>
+  <body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 antialiased">
+    <div id="root"></div>
+    <script type="module" src="/index.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+{
+  "name": "Electricity Bill Management Local Storage",
+  "description": "A precise electricity bill calculation and splitting tool designed for shared housing, featuring automatic rate derivation and cost distribution.",
+  "requestFramePermissions": []
+}
