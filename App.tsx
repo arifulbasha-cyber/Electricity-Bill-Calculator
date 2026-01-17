@@ -61,42 +61,46 @@ const calculateBillBreakdown = (
     const DEMAND_CHARGE = tariffConfig.demandCharge;
     const METER_RENT = tariffConfig.meterRent;
     
-    // 1. Calculate Main Units
+    // 1. Calculate Main Meter Units (for base reference)
     const mainUnits = Math.max(0, mainMeter.current - mainMeter.previous);
     
-    // 2. Calculate BASE Energy Cost from Main Meter using Slabs
-    const energyCostMain = calculateEnergyCost(mainUnits, tariffConfig.slabs);
-    
-    // 3. Calculate VAT and Fees
-    const taxableBase = energyCostMain + DEMAND_CHARGE + METER_RENT;
+    // 2. Calculate Total Bill (System Total) based on Main Meter
+    const energyCostBase = calculateEnergyCost(mainUnits, tariffConfig.slabs);
+    const fixedBase = DEMAND_CHARGE + METER_RENT;
+    const taxableBase = energyCostBase + fixedBase;
     const vatTotal = taxableBase * VAT_RATE;
     const lateFee = config.includeLateFee ? vatTotal : 0;
     const bkash = config.includeBkashFee ? tariffConfig.bkashCharge : 0;
     
-    const vatFixed = (DEMAND_CHARGE + METER_RENT) * VAT_RATE;
+    const totalBillCalculated = taxableBase + vatTotal + lateFee + bkash;
+
+    // 3. VAT Distribution (User's specific request)
+    // VAT Fixed = (Demand Charge + Meter Rent) * 5%
+    const vatFixed = fixedBase * VAT_RATE;
+    // VAT Distributed = Total VAT - VAT Fixed
     const vatDistributed = vatTotal - vatFixed;
     
-    // 4. Determine Energy Fund and Unit Rate
-    const energyFund = energyCostMain + vatDistributed;
-    const calculatedRate = mainUnits > 0 ? energyFund / mainUnits : 0;
-
-    // 5. Shared Fixed Pool
-    const fixedPool = DEMAND_CHARGE + METER_RENT + vatFixed + bkash + lateFee;
-    const numUsers = meters.length;
-    const fixedCostPerUser = numUsers > 0 ? fixedPool / numUsers : 0;
-    
-    let totalUserUnits = 0;
+    // 4. Calculate Sub-meter Total Units
+    let totalSubmeterUnits = 0;
     meters.forEach(m => {
       const units = m.current - m.previous;
-      totalUserUnits += units > 0 ? units : 0;
+      totalSubmeterUnits += units > 0 ? units : 0;
     });
 
-    let totalCollection = 0;
+    // 5. Shared Pool (Fixed Costs)
+    const fixedSharedPool = fixedBase + vatFixed + bkash + lateFee;
+    const fixedCostPerUser = meters.length > 0 ? fixedSharedPool / meters.length : 0;
+
+    // 6. Rate Calculation (Corrected to ensure sum matches)
+    // Rate = (Total Bill - Fixed Shared Pool) / Sum of Sub-meter Units
+    // This distributes any "System Loss" across the energy rate
+    const energySharedPool = energyCostBase + vatDistributed;
+    const calculatedRate = totalSubmeterUnits > 0 ? energySharedPool / totalSubmeterUnits : 0;
+
     const userCalculations: UserCalculation[] = meters.map(m => {
       const units = Math.max(0, m.current - m.previous);
       const userEnergyCost = units * calculatedRate;
       const totalPayable = userEnergyCost + fixedCostPerUser;
-      totalCollection += totalPayable;
       return {
         id: m.id,
         name: m.name,
@@ -107,18 +111,15 @@ const calculateBillBreakdown = (
       };
     });
 
-    // The "Total Bill Payable" used in display is the sum of these parts
-    const finalCalculatedTotal = taxableBase + vatTotal + lateFee + bkash;
-
     return { 
       vatFixed, 
       vatDistributed, 
       vatTotal, 
       lateFee, 
       calculatedRate, 
-      totalUnits: totalUserUnits, 
+      totalUnits: totalSubmeterUnits, 
       userCalculations, 
-      totalCollection: finalCalculatedTotal // Return the auto-calculated total
+      totalCollection: totalBillCalculated
     };
 };
 
@@ -270,7 +271,6 @@ const AppContent: React.FC = () => {
   };
 
   const saveToHistory = async () => {
-    // Ensure the total collection is stored in the config for historical accuracy
     const updatedConfig = { ...config, totalBillPayable: calculationResult.totalCollection };
     const newRecord: SavedBill = { id: Date.now().toString(), savedAt: new Date().toISOString(), config: updatedConfig, mainMeter: { ...mainMeter }, meters: [...meters] };
     const updatedHistory = sortBills([newRecord, ...history]);
@@ -307,7 +307,6 @@ const AppContent: React.FC = () => {
 
   const isCloudReady = spreadsheetService.isReady();
 
-  // Dynamic Header Title Calculation
   const headerTitle = useMemo(() => {
     switch(currentView) {
       case 'estimator': return 'Electricity Bill Calculator';
@@ -350,7 +349,6 @@ const AppContent: React.FC = () => {
         </div>
       </header>
 
-      {/* Slide out Menu */}
       {isMenuOpen && (
         <>
           <div className="fixed inset-0 z-[100] bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setIsMenuOpen(false)}></div>
