@@ -11,7 +11,7 @@ import TrendsDashboard from './components/TrendsDashboard';
 import CloudSetupModal from './components/CloudSetupModal';
 import MobileNav from './components/MobileNav';
 import SkeletonLoader from './components/SkeletonLoader';
-import { Lightbulb, Database, Settings, Cloud, Moon, Sun, Menu, PieChart, BarChart3, RefreshCw, Plus, Save, UploadCloud, DownloadCloud } from 'lucide-react';
+import { Lightbulb, Database, Settings, Cloud, Moon, Sun, Menu, PieChart, BarChart3, RefreshCw, Plus, Save, UploadCloud, DownloadCloud, FastForward } from 'lucide-react';
 import { LanguageProvider, useLanguage } from './i18n';
 import { ThemeProvider, useTheme } from './components/ThemeContext';
 import { spreadsheetService } from './services/spreadsheet';
@@ -113,7 +113,7 @@ const calculateBillBreakdown = (
 };
 
 const AppContent: React.FC = () => {
-  const { t } = useLanguage();
+  const { t, translateMonth } = useLanguage();
   const { theme, toggleTheme } = useTheme();
   type AppView = 'home' | 'estimator' | 'history' | 'stats' | 'trends' | 'tariff';
   const [currentView, setCurrentView] = useState<AppView>('estimator');
@@ -252,6 +252,38 @@ const AppContent: React.FC = () => {
     alert("Bill saved to local history. Use 'Push to Cloud' to backup.");
   };
 
+  const handleNextMonth = () => {
+    if (window.confirm(t('confirm_next_month'))) {
+      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const currentIndex = monthNames.indexOf(config.month);
+      const nextMonth = monthNames[(currentIndex + 1) % 12];
+      
+      // Update config
+      setConfig(prev => ({
+        ...prev,
+        month: nextMonth,
+        dateGenerated: new Date().toISOString().split('T')[0]
+      }));
+
+      // Update main meter: current becomes previous
+      setMainMeter(prev => ({
+        ...prev,
+        previous: prev.current,
+        // Reset current for better UX or leave as is if user wants to keep tracking
+      }));
+
+      // Update sub-meters: current becomes previous
+      setMeters(prev => prev.map(m => ({
+        ...m,
+        previous: m.current,
+        // Reset current to match the new previous for starting fresh
+      })));
+      
+      setCurrentView('home');
+      alert(`Prepared for ${translateMonth(nextMonth)} bill.`);
+    }
+  };
+
   const loadFromHistory = (record: SavedBill) => {
     if (window.confirm(t('confirm_load').replace('{month}', record.config.month))) {
       setConfig({ ...record.config });
@@ -307,8 +339,8 @@ const AppContent: React.FC = () => {
                 <button onClick={() => { const m: MeterReading = { id: Date.now().toString(), name: '', meterNo: (meters.length+1).toString(), previous: 0, current: 0 }; setMeters([...meters, m]); }} className="p-3 text-white/90 hover:bg-white/10 rounded-2xl transition-all active:scale-90" title="Add Meter">
                   <Plus className="w-6 h-6" />
                 </button>
-                <button onClick={saveToHistory} className="p-3 text-white/90 hover:bg-white/10 rounded-2xl transition-all active:scale-90" title="Save History">
-                  <Save className="w-6 h-6" />
+                <button onClick={handleNextMonth} className="p-3 text-white/90 hover:bg-white/10 rounded-2xl transition-all active:scale-90" title={t('next_month')}>
+                  <FastForward className="w-6 h-6" />
                 </button>
               </>
             )}
