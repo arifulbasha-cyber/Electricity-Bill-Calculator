@@ -1,6 +1,7 @@
+
 {
-  "short_name": "BillSplitter",
-  "name": "TMSS Electricity Bill Splitter",
+  "short_name": "Bill Calc",
+  "name": "Electricity Bill Calculator",
   "icons": [
     {
       "src": "https://cdn-icons-png.flaticon.com/512/2933/2933886.png",

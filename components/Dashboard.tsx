@@ -1,8 +1,9 @@
 
 import React, { useState, useRef } from 'react';
-import { BillCalculationResult, BillConfig, MeterReading, Tenant, TariffConfig, Slab } from '../types';
+import { BillCalculationResult, BillConfig, MeterReading, Tenant, TariffConfig } from '../types';
 import { useLanguage } from '../i18n';
-import { CreditCard, Clock, Calculator, Plus, Trash2, ChevronUp, Save, Zap, ShieldAlert, X, Image as ImageIcon, Share2, Loader2 } from 'lucide-react';
+// Added Trash2 to the imports from lucide-react
+import { CreditCard, Clock, Calculator, ChevronUp, Save, Zap, ShieldAlert, X, Image as ImageIcon, Share2, Loader2, Download, Smartphone, Trash2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
 interface DashboardProps {
@@ -25,6 +26,7 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
   const [confirmText, setConfirmText] = useState('');
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   
   const resultsRef = useRef<HTMLDivElement>(null);
   const longPressTimerRef = useRef<number | null>(null);
@@ -64,50 +66,45 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
     }
   };
 
-  const captureCanvas = async (scale = 3) => {
+  const captureCanvas = async (scale = 2) => {
     if (!resultsRef.current) return null;
     
     // Create a temporary container to render the light-mode version for the image
     const element = resultsRef.current;
     const clone = element.cloneNode(true) as HTMLElement;
     
-    // Force some styles for the capture to prevent wrapping and ensure centering
     const container = document.createElement('div');
-    container.style.position = 'absolute';
+    container.style.position = 'fixed'; // Using fixed instead of absolute for better mobile layout stability
     container.style.left = '-9999px';
     container.style.top = '0';
-    container.style.width = '520px'; 
-    container.style.padding = '40px 30px'; 
+    container.style.width = '480px'; 
+    container.style.padding = '30px 20px'; 
     container.style.backgroundColor = '#f8fafc'; 
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
     container.style.alignItems = 'center';
     
-    // Remove no-print/no-capture items from clone
     const noPrintItems = clone.querySelectorAll('.no-capture');
     noPrintItems.forEach(el => el.remove());
     
-    // Ensure text is dark and layout is optimized for capture
     clone.classList.remove('dark', 'max-w-2xl', 'mx-auto');
     clone.style.width = '100%';
-    clone.style.maxWidth = '460px'; 
+    clone.style.maxWidth = '440px'; 
     clone.style.margin = '0';
     
     const allDark = clone.querySelectorAll('.dark');
     allDark.forEach(el => el.classList.remove('dark'));
 
-    // Prevent unit wrapping in the table specifically for the clone
     const unitCells = clone.querySelectorAll('td.font-mono');
     unitCells.forEach(cell => {
       (cell as HTMLElement).style.whiteSpace = 'nowrap';
-      (cell as HTMLElement).style.paddingLeft = '8px';
-      (cell as HTMLElement).style.paddingRight = '8px';
     });
     
     container.appendChild(clone);
     document.body.appendChild(container);
 
-    await new Promise(resolve => setTimeout(resolve, 200));
+    // Short delay for mobile layout engine
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     const canvas = await html2canvas(container, {
       scale: scale, 
@@ -115,8 +112,7 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
       logging: false,
       useCORS: true,
       allowTaint: true,
-      width: 520,
-      windowWidth: 520
+      width: 480,
     });
     
     document.body.removeChild(container);
@@ -126,19 +122,14 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
   const handleSaveImage = async () => {
     try {
       setIsGeneratingImage(true);
-      const canvas = await captureCanvas();
+      const canvas = await captureCanvas(2); // Reduced scale for APK performance
       if (!canvas) return;
       
       const image = canvas.toDataURL("image/png");
-      const link = document.createElement('a');
-      link.href = image;
-      link.download = `Bill-Split-${config.month}-${new Date().getTime()}.png`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      setPreviewImage(image);
     } catch (error) {
       console.error("Failed to generate image", error);
-      alert("Failed to save image. Please try again.");
+      alert("Failed to generate image preview.");
     } finally {
       setIsGeneratingImage(false);
     }
@@ -147,25 +138,26 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
   const handleShareImage = async () => {
     try {
       setIsSharing(true);
-      const canvas = await captureCanvas();
+      const canvas = await captureCanvas(2);
       if (!canvas) return;
       
       canvas.toBlob(async (blob) => {
         if (!blob) return;
         const file = new File([blob], `Bill-${config.month}.png`, { type: 'image/png' });
         
-        if (navigator.share) {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
           try {
             await navigator.share({
               files: [file],
-              title: `Electricity Bill Split - ${config.month}`,
-              text: `Detailed split for ${translateMonth(config.month)} Bill.`
+              title: `Bill Split - ${config.month}`,
+              text: `Electricity Bill Split for ${translateMonth(config.month)}.`
             });
           } catch (err) {
-            console.log("Sharing cancelled or failed", err);
+            console.log("Sharing failed", err);
           }
         } else {
-          handleSaveImage();
+          // If native share fails, fallback to preview so they can manual save
+          setPreviewImage(canvas.toDataURL("image/png"));
         }
       });
     } catch (error) {
@@ -378,6 +370,42 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
         </div>
       )}
 
+      {/* Image Preview Modal (For APK Save Fallback) */}
+      {previewImage && (
+        <div 
+          onClick={() => setPreviewImage(null)}
+          className="fixed inset-0 z-[110] flex flex-col items-center justify-center p-4 bg-slate-950/95 backdrop-blur-xl animate-in fade-in duration-300"
+        >
+          <div className="w-full max-w-md flex flex-col gap-4">
+             <div className="flex justify-between items-center text-white">
+                <div className="flex items-center gap-2">
+                   <Smartphone className="w-5 h-5 text-indigo-400" />
+                   <span className="text-sm font-bold">Preview Bill Image</span>
+                </div>
+                <button onClick={() => setPreviewImage(null)} className="p-2 bg-white/10 rounded-full">
+                   <X className="w-6 h-6" />
+                </button>
+             </div>
+             
+             <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-white/20 touch-auto">
+                <img 
+                  src={previewImage} 
+                  alt="Bill Preview" 
+                  className="w-full h-auto select-none pointer-events-auto"
+                  onContextMenu={(e) => e.preventDefault()} // Standard mobile behavior
+                />
+             </div>
+
+             <div className="bg-indigo-500/20 border border-indigo-500/30 p-4 rounded-2xl text-center">
+                <p className="text-white text-xs font-bold leading-relaxed">
+                   <Download className="w-4 h-4 inline mr-1 mb-1 text-indigo-400" />
+                   Long press on the image above and select <span className="text-indigo-400 underline">"Download Image"</span> to save to your gallery.
+                </p>
+             </div>
+          </div>
+        </div>
+      )}
+
       {!showResult && (
         <button 
           onClick={() => setShowResult(true)}
@@ -519,7 +547,7 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
                    className="w-full h-14 bg-emerald-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 text-sm shadow-lg active:scale-95 transition-all"
                 >
                    {isGeneratingImage ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImageIcon className="w-5 h-5" />}
-                   Save PNG
+                   Preview & Save
                 </button>
                 <button 
                    onClick={handleShareImage}

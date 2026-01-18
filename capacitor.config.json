@@ -1,6 +1,7 @@
+
 {
   "appId": "com.electricity.bill.manager",
-  "appName": "TMSS Bill Splitter",
+  "appName": "Electricity Bill Calculator",
   "webDir": "dist",
   "server": {
     "androidScheme": "https"

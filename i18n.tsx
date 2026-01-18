@@ -15,7 +15,7 @@ interface LanguageContextType {
 const translations: Record<Language, Record<string, string>> = {
   en: {
     // Header
-    'app_title': 'Electricity Bill Management',
+    'app_title': 'Electricity Bill Calculator',
     'install_app': 'Install App',
     'bill_month': 'Bill Month',
     'date_generated': 'Date Generated',
@@ -193,7 +193,7 @@ const translations: Record<Language, Record<string, string>> = {
     'save_history': 'Save',
     'save_image': 'Image',
     'print': 'Print',
-    'tmss_house_bill': 'Electricity Bill Management',
+    'tmss_house_bill': 'Electricity Bill Calculator',
     'calculated_rate': 'Calculated Rate/Unit',
     'vat_distributed': 'VAT Distributed',
     'vat_fixed': 'VAT Fixed',
@@ -218,7 +218,7 @@ const translations: Record<Language, Record<string, string>> = {
   },
   bn: {
     // Header
-    'app_title': 'বিদ্যুৎ বিল ব্যবস্থাপনা',
+    'app_title': 'বিদ্যুৎ বিল ক্যালকুলেটর',
     'install_app': 'ইনস্টল অ্যাপ',
     'bill_month': 'বিলের মাস',
     'date_generated': 'তৈরির তারিখ',
@@ -397,7 +397,7 @@ const translations: Record<Language, Record<string, string>> = {
     'save_history': 'সেভ',
     'save_image': 'ইমেজ',
     'print': 'প্রিন্ট',
-    'tmss_house_bill': 'বিদ্যুৎ বিল ব্যবস্থাপনা',
+    'tmss_house_bill': 'বিদ্যুৎ বিল ক্যালকুলেটর',
     'calculated_rate': 'গণনাকৃত রেট/ইউনিট',
     'vat_distributed': 'ভ্যাট (বন্টিত)',
     'vat_fixed': 'ভ্যাট (ফিক্সড)',

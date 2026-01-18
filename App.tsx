@@ -311,30 +311,30 @@ const AppContent: React.FC = () => {
       case 'tariff': return t('tariff_settings');
       case 'trends': return t('trends_dashboard');
       case 'stats': return t('consumption_share');
-      default: return 'Bill Splitter';
+      default: return 'Electricity Bill Calculator';
     }
   }, [currentView, t]);
 
   return (
     <div className="min-h-screen bg-transparent pb-safe transition-colors duration-500">
-      <header className="sticky top-0 z-30 no-print pt-safe border-b border-white/10 bg-indigo-900 shadow-xl">
+      <header className="sticky top-0 z-30 no-print pt-safe border-b border-slate-200/50 dark:border-white/5 bg-white/70 dark:bg-slate-950/70 backdrop-blur-xl shadow-sm">
         <div className="px-5 h-20 flex items-center justify-between">
           <div className="flex items-center gap-4">
-              <button onClick={() => setIsMenuOpen(true)} className="p-2 text-white/90 hover:bg-white/10 rounded-2xl transition-all">
+              <button onClick={() => setIsMenuOpen(true)} className="p-2 text-slate-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-2xl transition-all">
                 <Menu className="w-6 h-6" />
               </button>
               <div>
-                <h1 className="text-xl font-bold tracking-tight text-white leading-none">{headerTitle}</h1>
+                <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white leading-none">{headerTitle}</h1>
               </div>
           </div>
             
           <div className="flex items-center gap-2">
             {currentView === 'home' && (
               <>
-                <button onClick={() => { const m: MeterReading = { id: Date.now().toString(), name: '', meterNo: (meters.length+1).toString(), previous: 0, current: 0 }; setMeters([...meters, m]); }} className="p-3 text-white/90 hover:bg-white/10 rounded-2xl transition-all active:scale-90" title="Add Meter">
+                <button onClick={() => { const m: MeterReading = { id: Date.now().toString(), name: '', meterNo: (meters.length+1).toString(), previous: 0, current: 0 }; setMeters([...meters, m]); }} className="p-3 text-slate-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-2xl transition-all active:scale-90" title="Add Meter">
                   <Plus className="w-6 h-6" />
                 </button>
-                <button onClick={handleNextMonth} className="p-3 text-white/90 hover:bg-white/10 rounded-2xl transition-all active:scale-90" title={t('next_month')}>
+                <button onClick={handleNextMonth} className="p-3 text-slate-900 dark:text-white hover:bg-black/5 dark:hover:bg-white/10 rounded-2xl transition-all active:scale-90" title={t('next_month')}>
                   <FastForward className="w-6 h-6" />
                 </button>
               </>
