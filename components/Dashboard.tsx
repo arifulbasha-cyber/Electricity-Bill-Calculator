@@ -2,7 +2,7 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { BillCalculationResult, BillConfig, MeterReading, Tenant, TariffConfig } from '../types';
 import { useLanguage } from '../i18n';
-import { Calculator, ChevronUp, Save, Share2, Loader2, Download, Activity, Zap, X } from 'lucide-react';
+import { ChevronUp, Share2, Loader2, Download, Activity, CreditCard, Clock, Calculator as CalcIcon, Calendar } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
 interface DashboardProps {
@@ -30,8 +30,7 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
   const longPressTimerRef = useRef<number | null>(null);
 
   const mainUnits = Math.max(0, mainMeter.current - mainMeter.previous);
-  const totalSubUnits = useMemo(() => meters.reduce((acc, m) => acc + Math.max(0, m.current - m.previous), 0), [meters]);
-
+  
   const bkashFee = config.includeBkashFee ? tariffConfig.bkashCharge : 0;
   const baseBill = result.totalCollection - result.lateFee - bkashFee;
   const totalSharedFixedCosts = tariffConfig.demandCharge + tariffConfig.meterRent + result.vatFixed + result.lateFee + bkashFee;
@@ -40,6 +39,8 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
   const userSubtotal = useMemo(() => 
     result.userCalculations.reduce((acc, u) => acc + u.totalPayable, 0), 
   [result.userCalculations]);
+
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   const handleMainMeterChange = (key: keyof MeterReading, value: any) => {
     onMainMeterUpdate({ ...mainMeter, [key]: value });
@@ -141,7 +142,7 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
   const handleShareImage = async () => {
     try {
       setIsSharing(true);
-      const canvas = await captureCanvas(2.5); // Slightly lower scale to improve sharing compatibility on older mobile devices
+      const canvas = await captureCanvas(2.5); 
       if (!canvas) return;
 
       const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
@@ -157,12 +158,10 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
           text: `Utility Bill Split for ${config.month}`
         });
       } else {
-        // Fallback if sharing is not supported or sharing files is not allowed
         handleSaveDirectly();
       }
     } catch (e: any) {
       console.error("Share attempt failed:", e);
-      // Only alert if it's not a user-initiated cancellation
       if (e.name !== 'AbortError') {
         alert("Share failed: " + (e.message || "Please try 'Save to Gallery' instead."));
       }
@@ -175,80 +174,147 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
   const formattedTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
 
   return (
-    <div className="space-y-3 pb-32 max-w-2xl mx-auto">
+    <div className="space-y-4 pb-32 w-full max-w-full overflow-x-hidden">
       
-      {/* Input Section */}
-      <div className="bg-white dark:bg-slate-900 rounded-xl p-3 shadow-sm border border-slate-100 dark:border-slate-800">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Data Entry</h3>
-          <span className="text-[10px] font-black text-emerald-500 uppercase">{formatNumber(mainUnits)} kWh Main</span>
-        </div>
-        <div className="grid grid-cols-12 gap-2">
-           <div className="col-span-4 relative border border-slate-100 dark:border-slate-800 rounded-lg p-1.5 h-11 flex items-center bg-slate-50 dark:bg-slate-950">
-             <label className="absolute -top-1.5 left-2 bg-white dark:bg-slate-900 px-1 text-[7px] font-black text-slate-400 uppercase tracking-widest">Date</label>
-             <input type="date" value={config.dateGenerated} onChange={(e) => { handleConfigChange('dateGenerated', e.target.value); setShowResult(false); }} className="w-full bg-transparent text-[13px] font-bold outline-none" />
-           </div>
-           <div className="col-span-4 relative border border-slate-100 dark:border-slate-800 rounded-lg p-1.5 h-11 flex items-center bg-slate-50 dark:bg-slate-950">
-             <label className="absolute -top-1.5 left-2 bg-white dark:bg-slate-900 px-1 text-[7px] font-black text-slate-400 uppercase tracking-widest">Previous</label>
-             <input type="number" value={mainMeter.previous || ''} onChange={(e) => { handleMainMeterChange('previous', parseFloat(e.target.value) || 0); setShowResult(false); }} className="w-full bg-transparent text-base font-bold outline-none" />
-           </div>
-           <div className="col-span-4 relative border border-slate-100 dark:border-slate-800 rounded-lg p-1.5 h-11 flex items-center bg-slate-50 dark:bg-slate-950">
-             <label className="absolute -top-1.5 left-2 bg-white dark:bg-slate-900 px-1 text-[7px] font-black text-emerald-500 uppercase tracking-widest">Current</label>
-             <input type="number" value={mainMeter.current || ''} onChange={(e) => { handleMainMeterChange('current', parseFloat(e.target.value) || 0); setShowResult(false); }} className="w-full bg-transparent text-base font-bold outline-none" />
-           </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-2">
-        <button onClick={() => { handleConfigChange('includeBkashFee', !config.includeBkashFee); setShowResult(false); }} className={`h-11 rounded-xl px-4 flex items-center justify-between border ${config.includeBkashFee ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-400'}`}>
-           <span className="text-[9px] font-black uppercase">bKash</span>
-           <div className={`w-7 h-4 rounded-full relative transition-colors ${config.includeBkashFee ? 'bg-white/30' : 'bg-slate-200'}`}>
-              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${config.includeBkashFee ? 'left-3.5' : 'left-0.5'}`}></div>
-           </div>
-        </button>
-        <button onClick={() => { handleConfigChange('includeLateFee', !config.includeLateFee); setShowResult(false); }} className={`h-11 rounded-xl px-4 flex items-center justify-between border ${config.includeLateFee ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-slate-400'}`}>
-           <span className="text-[9px] font-black uppercase">Late Fee</span>
-           <div className={`w-7 h-4 rounded-full relative transition-colors ${config.includeLateFee ? 'bg-white/30' : 'bg-slate-200'}`}>
-              <div className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all ${config.includeLateFee ? 'left-3.5' : 'left-0.5'}`}></div>
-           </div>
-        </button>
-      </div>
-
-      <div className="space-y-1.5">
-        {meters.map((meter, index) => (
-          <div key={meter.id} onMouseDown={() => startLongPress(meter)} onMouseUp={endLongPress} onTouchStart={() => startLongPress(meter)} onTouchEnd={endLongPress} className="bg-white dark:bg-slate-900 rounded-xl p-2.5 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center gap-3">
-            <span className="w-7 h-7 rounded bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-sm font-black text-indigo-600">{index+1}</span>
-            <div className="flex-1 grid grid-cols-12 gap-2 items-center">
-              <input type="text" value={meter.name} onChange={(e) => { handleMeterChange(meter.id, 'name', e.target.value); setShowResult(false); }} className="col-span-4 h-10 bg-transparent text-base font-bold outline-none border-b border-slate-50 dark:border-slate-800 placeholder:text-slate-300" placeholder="User" />
-              <div className="col-span-3 relative h-10 flex items-center border-b border-slate-50 dark:border-slate-800">
-                <label className="absolute -top-1.5 left-0 text-[7px] font-black text-slate-400 uppercase">Prev</label>
-                <input type="number" value={meter.previous || ''} onChange={(e) => { handleMeterChange(meter.id, 'previous', parseFloat(e.target.value) || 0); setShowResult(false); }} className="w-full bg-transparent text-base font-bold text-center" />
-              </div>
-              <div className="col-span-3 relative h-10 flex items-center border-b border-slate-50 dark:border-slate-800">
-                <label className="absolute -top-1.5 left-0 text-[7px] font-black text-emerald-500 uppercase">Curr</label>
-                <input type="number" value={meter.current || ''} onChange={(e) => { handleMeterChange(meter.id, 'current', parseFloat(e.target.value) || 0); setShowResult(false); }} className="w-full bg-transparent text-base font-bold text-center" />
-              </div>
-              <div className="col-span-2 text-right">
-                <span className="text-[7px] block font-black text-slate-400 uppercase leading-none">Units</span>
-                <span className="text-sm font-black text-indigo-600 font-mono">{formatNumber(Math.max(0, meter.current - meter.previous))}</span>
-              </div>
-            </div>
+      {/* 1. Period & Date Section */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 mx-1">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="relative border border-slate-100 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50 dark:bg-slate-950">
+            <label className="absolute -top-2 left-3 bg-white dark:bg-slate-900 px-1 text-[8px] font-black text-indigo-600 uppercase tracking-widest">Bill Month</label>
+            <select
+              value={config.month}
+              onChange={(e) => { handleConfigChange('month', e.target.value); setShowResult(false); }}
+              className="w-full bg-transparent text-sm font-bold text-slate-900 dark:text-white outline-none appearance-none"
+            >
+              {months.map(m => <option key={m} value={m}>{translateMonth(m)}</option>)}
+            </select>
           </div>
-        ))}
+          <div className="relative border border-slate-100 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50 dark:bg-slate-950">
+            <label className="absolute -top-2 left-3 bg-white dark:bg-slate-900 px-1 text-[8px] font-black text-indigo-600 uppercase tracking-widest">Date</label>
+            <input
+              type="date"
+              value={config.dateGenerated}
+              onChange={(e) => { handleConfigChange('dateGenerated', e.target.value); setShowResult(false); }}
+              className="w-full bg-transparent text-sm font-bold text-slate-900 dark:text-white outline-none"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Configuration Section (Toggles) */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 space-y-4 mx-1">
+        <button 
+          onClick={() => { handleConfigChange('includeBkashFee', !config.includeBkashFee); setShowResult(false); }}
+          className="w-full flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <CreditCard className="w-5 h-5 text-slate-500" />
+            <span className="text-base font-semibold text-slate-700 dark:text-slate-200">Include bKash Fee</span>
+          </div>
+          <div className={`w-12 h-7 rounded-full relative transition-all duration-300 ${config.includeBkashFee ? 'bg-indigo-900' : 'bg-slate-200 dark:bg-slate-800'}`}>
+            <div className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow-sm transition-all duration-300 ${config.includeBkashFee ? 'left-5.5' : 'left-0.5'}`}></div>
+          </div>
+        </button>
+
+        <button 
+          onClick={() => { handleConfigChange('includeLateFee', !config.includeLateFee); setShowResult(false); }}
+          className="w-full flex items-center justify-between"
+        >
+          <div className="flex items-center gap-3">
+            <Clock className="w-5 h-5 text-slate-500" />
+            <span className="text-base font-semibold text-slate-700 dark:text-slate-200">Include Late Fee</span>
+          </div>
+          <div className={`w-12 h-7 rounded-full relative transition-all duration-300 ${config.includeLateFee ? 'bg-indigo-900' : 'bg-slate-200 dark:bg-slate-800'}`}>
+            <div className={`absolute top-0.5 w-6 h-6 bg-white rounded-full shadow-sm transition-all duration-300 ${config.includeLateFee ? 'left-5.5' : 'left-0.5'}`}></div>
+          </div>
+        </button>
+      </div>
+
+      {/* Main Meter Entry */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-5 shadow-sm border border-slate-100 dark:border-slate-800 mx-1">
+        <div className="flex justify-between items-center mb-4 px-1">
+           <h3 className="text-xl font-bold text-slate-800 dark:text-white tracking-tight">Main Meter</h3>
+           <span className="text-[10px] font-black text-indigo-600 uppercase tracking-widest">{formatNumber(mainUnits)} kWh</span>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+           <div className="relative border border-slate-100 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50 dark:bg-slate-950">
+             <label className="absolute -top-2 left-3 bg-white dark:bg-slate-900 px-1 text-[8px] font-black text-slate-400 uppercase tracking-widest">Previous</label>
+             <input type="number" value={mainMeter.previous || ''} onChange={(e) => { handleMainMeterChange('previous', parseFloat(e.target.value) || 0); setShowResult(false); }} className="w-full bg-transparent text-lg font-bold outline-none" />
+           </div>
+           <div className="relative border border-slate-100 dark:border-slate-800 rounded-xl p-2.5 bg-slate-50 dark:bg-slate-950">
+             <label className="absolute -top-2 left-3 bg-white dark:bg-slate-900 px-1 text-[8px] font-black text-indigo-600 uppercase tracking-widest">Current</label>
+             <input type="number" value={mainMeter.current || ''} onChange={(e) => { handleMainMeterChange('current', parseFloat(e.target.value) || 0); setShowResult(false); }} className="w-full bg-transparent text-lg font-bold outline-none" />
+           </div>
+        </div>
+      </div>
+
+      {/* Sub-Meters Sheet Entry */}
+      <div className="bg-white dark:bg-slate-900 rounded-[2rem] px-2 py-5 shadow-sm border border-slate-100 dark:border-slate-800 mx-1 overflow-hidden">
+        <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-5 px-2">Sub-Meters</h3>
+        
+        <div className="grid grid-cols-[3.5fr_2fr_2fr] gap-1.5 mb-2.5 px-2">
+          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Name</div>
+          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Previous</div>
+          <div className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center">Current</div>
+        </div>
+
+        <div className="space-y-2 px-1">
+          {meters.map((meter) => (
+            <div 
+              key={meter.id} 
+              onMouseDown={() => startLongPress(meter)} 
+              onMouseUp={endLongPress} 
+              onTouchStart={() => startLongPress(meter)} 
+              onTouchEnd={endLongPress} 
+              className="grid grid-cols-[3.5fr_2fr_2fr] gap-1.5 items-center group"
+            >
+              <input 
+                type="text" 
+                value={meter.name} 
+                onChange={(e) => { handleMeterChange(meter.id, 'name', e.target.value); setShowResult(false); }} 
+                className="h-12 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-2 text-base font-bold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-indigo-500/30 transition-all placeholder:text-slate-200" 
+                placeholder="Name" 
+              />
+              <input 
+                type="number" 
+                value={meter.previous || ''} 
+                onChange={(e) => { handleMeterChange(meter.id, 'previous', parseFloat(e.target.value) || 0); setShowResult(false); }} 
+                className="h-12 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-0.5 text-center text-base font-bold text-slate-600 dark:text-slate-400 outline-none focus:ring-1 focus:ring-indigo-500/30 transition-all" 
+                placeholder="Prev" 
+              />
+              <input 
+                type="number" 
+                value={meter.current || ''} 
+                onChange={(e) => { handleMeterChange(meter.id, 'current', parseFloat(e.target.value) || 0); setShowResult(false); }} 
+                className="h-12 w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 px-0.5 text-center text-base font-bold text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-indigo-500/30 transition-all" 
+                placeholder="Curr" 
+              />
+            </div>
+          ))}
+        </div>
+
+        {meters.length === 0 && (
+          <div className="text-center py-6 text-slate-400 italic text-xs">No meters added yet.</div>
+        )}
       </div>
 
       {!showResult && (
-        <button onClick={() => { setShowResult(true); window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }} className="w-full h-14 bg-indigo-900 text-white rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 mt-4">
-          <Calculator className="w-5 h-5" /> Calculate Split Bill
-        </button>
+        <div className="px-1">
+          <button 
+            onClick={() => { setShowResult(true); window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }} 
+            className="w-full h-14 bg-indigo-900 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2.5 mt-2"
+          >
+            <CalcIcon className="w-4 h-4" /> Generate Receipt
+          </button>
+        </div>
       )}
 
-      {/* ATM Receipt Style Result Section */}
+      {/* Result Section (Receipt) */}
       {showResult && (
-        <div className="animate-in slide-in-from-bottom-6 duration-500 space-y-4">
-          <div className="no-capture flex justify-between items-center px-2 pt-6 mb-2">
-            <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest">Digital Receipt</h2>
-            <button onClick={() => setShowResult(false)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl"><ChevronUp className="w-4 h-4 text-slate-500" /></button>
+        <div className="animate-in slide-in-from-bottom-6 duration-500 space-y-4 mt-8 px-1">
+          <div className="no-capture flex justify-between items-center px-4 mb-2">
+            <h2 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Billing Results</h2>
+            <button onClick={() => setShowResult(false)} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg"><ChevronUp className="w-4 h-4 text-slate-500" /></button>
           </div>
 
           <div 
@@ -273,7 +339,6 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
                <div className="mt-1">------------------------------------</div>
             </div>
 
-            {/* Main Billing Totals */}
             <div className="space-y-1 mb-4">
                <div className="flex justify-between font-black text-base">
                   <span>TOTAL BILL PAYABLE :</span>
@@ -285,7 +350,6 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
                <div className="mt-1">------------------------------------</div>
             </div>
 
-            {/* Reading Details */}
             <div className="space-y-1 mb-4">
                <div className="text-center font-black">--- METER READINGS ---</div>
                <div className="flex justify-between">
@@ -300,7 +364,6 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
                <div className="mt-1">------------------------------------</div>
             </div>
 
-            {/* Cost Breakdown */}
             <div className="space-y-1 mb-4">
                <div className="text-center font-black">--- COST BREAKDOWN ---</div>
                <div className="flex justify-between">
@@ -319,6 +382,19 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
                   <span>Total VAT         :</span>
                   <span>৳{formatNumber(result.vatTotal.toFixed(2))}</span>
                </div>
+               {/* Conditional Rows for bKash and Late Fees */}
+               {config.includeLateFee && (
+                 <div className="flex justify-between">
+                    <span>Late Fee          :</span>
+                    <span>৳{formatNumber(result.lateFee.toFixed(2))}</span>
+                 </div>
+               )}
+               {config.includeBkashFee && (
+                 <div className="flex justify-between">
+                    <span>bKash Fee         :</span>
+                    <span>৳{formatNumber(bkashFee.toFixed(2))}</span>
+                 </div>
+               )}
                <div className="flex justify-between">
                   <span>Shared Fixed Cost :</span>
                   <span>৳{formatNumber(totalSharedFixedCosts.toFixed(2))}</span>
@@ -330,7 +406,6 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
                <div className="mt-1">------------------------------------</div>
             </div>
 
-            {/* Individual Breakdown Section */}
             <div className="mb-4">
                <div className="text-center font-black mb-2">--- INDIVIDUAL BILLS ---</div>
                <table className="w-full border-collapse">
@@ -356,32 +431,29 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
             <div className="text-center font-black mt-6 mb-2">
                THANK YOU FOR YOUR PAYMENT
             </div>
-            
-            {/* Visual jagged bottom for receipt effect */}
             <div className="absolute bottom-0 left-0 right-0 h-1 bg-white no-capture" style={{ backgroundImage: 'linear-gradient(135deg, #f1f5f9 25%, transparent 25%), linear-gradient(225deg, #f1f5f9 25%, transparent 25%)', backgroundPosition: '0 0', backgroundSize: '8px 8px' }}></div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="max-w-[380px] mx-auto space-y-3 no-capture">
+          <div className="max-w-[380px] mx-auto space-y-3 no-capture px-4">
              <div className="grid grid-cols-2 gap-3">
                 <button 
                   onClick={handleSaveDirectly} 
                   disabled={isGenerating}
-                  className="h-14 bg-indigo-900 text-white rounded-2xl font-black flex items-center justify-center gap-2 text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50"
+                  className="h-14 bg-indigo-900 text-white rounded-xl font-black flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50"
                 >
-                   {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />} Save to Gallery
+                   {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />} Save
                 </button>
                 <button 
                   onClick={handleShareImage} 
                   disabled={isSharing}
-                  className="h-14 bg-slate-900 text-white rounded-2xl font-black flex items-center justify-center gap-2 text-xs uppercase tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50"
+                  className="h-14 bg-slate-900 text-white rounded-xl font-black flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50"
                 >
-                   {isSharing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Share2 className="w-5 h-5" />} Share
+                   {isSharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />} Share
                 </button>
              </div>
              <button 
                 onClick={onSaveHistory}
-                className="w-full h-12 bg-emerald-600 text-white rounded-2xl font-black flex items-center justify-center gap-2 text-xs uppercase tracking-widest shadow-md active:scale-95 transition-all"
+                className="w-full h-12 bg-emerald-600 text-white rounded-xl font-black flex items-center justify-center gap-2 text-[10px] uppercase tracking-widest shadow-md active:scale-95 transition-all"
              >
                 <Activity className="w-4 h-4" /> Finalize & Sync
              </button>

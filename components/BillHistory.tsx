@@ -92,7 +92,7 @@ const BillHistory: React.FC<BillHistoryProps> = ({ history, onLoad, onDelete, on
                   
                   <div className="text-right">
                     <div className="text-2xl font-black text-indigo-900 dark:text-indigo-400 tracking-tighter leading-none mb-1">
-                      ৳{formatNumber(bill.config.totalBillPayable)}
+                      ৳{formatNumber(Math.round(bill.config.totalBillPayable))}
                     </div>
                     <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
                       {t('saved_at')} {new Date(bill.savedAt).toLocaleDateString()}

@@ -244,8 +244,18 @@ const AppContent: React.FC = () => {
   };
 
   const saveToHistory = async () => {
-    const updatedConfig = { ...config, totalBillPayable: calculationResult.totalCollection };
-    const newRecord: SavedBill = { id: Date.now().toString(), savedAt: new Date().toISOString(), config: updatedConfig, mainMeter: { ...mainMeter }, meters: [...meters] };
+    // Round total bill payable to remove decimals when saving
+    const updatedConfig = { 
+      ...config, 
+      totalBillPayable: Math.round(calculationResult.totalCollection) 
+    };
+    const newRecord: SavedBill = { 
+      id: Date.now().toString(), 
+      savedAt: new Date().toISOString(), 
+      config: updatedConfig, 
+      mainMeter: { ...mainMeter }, 
+      meters: [...meters] 
+    };
     const updatedHistory = sortBills([newRecord, ...history]);
     setHistory(updatedHistory);
     localStorage.setItem('tmss_bill_history', JSON.stringify(updatedHistory));
