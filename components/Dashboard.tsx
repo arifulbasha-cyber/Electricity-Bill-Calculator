@@ -4,6 +4,8 @@ import { BillCalculationResult, BillConfig, MeterReading, Tenant, TariffConfig }
 import { useLanguage } from '../i18n';
 import { ChevronUp, Share2, Loader2, Download, Activity, CreditCard, Clock, Calculator as CalcIcon, Calendar } from 'lucide-react';
 import html2canvas from 'html2canvas';
+import { Share } from '@capacitor/share';
+import { Filesystem, Directory } from '@capacitor/filesystem';
 
 interface DashboardProps {
   config: BillConfig;
@@ -115,60 +117,58 @@ const Dashboard: React.FC<DashboardProps> = ({ config, result, mainMeter, meters
   };
 
   const handleSaveDirectly = async () => {
-    try {
-      setIsGenerating(true);
-      const canvas = await captureCanvas(3);
-      if (canvas) {
-        canvas.toBlob((blob) => {
-          if (blob) {
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `Bill-${config.month}-${Date.now()}.png`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            setTimeout(() => URL.revokeObjectURL(url), 100);
-          }
-        }, "image/png");
-      }
-    } catch (e) {
-      alert("Failed to save image.");
-    } finally {
-      setIsGenerating(false);
+  try {
+    setIsGenerating(true);
+    const canvas = await captureCanvas(3);
+    if (canvas) {
+      // Base64 data extract kora (APK-te eta dorkar)
+      const base64Data = canvas.toDataURL("image/png").split(",")[1];
+      const fileName = `Bill-${config.month}-${Date.now()}.png`;
+
+      await Filesystem.writeFile({
+        path: fileName,
+        data: base64Data,
+        directory: Directory.Documents,
+      });
+      alert("Bill saved to Documents folder!");
     }
-  };
+  } catch (e) {
+    alert("Save failed! Please check permissions.");
+    console.error(e);
+  } finally {
+    setIsGenerating(false);
+  }
+};
 
   const handleShareImage = async () => {
-    try {
-      setIsSharing(true);
-      const canvas = await captureCanvas(2.5); 
-      if (!canvas) return;
+  try {
+    setIsSharing(true);
+    const canvas = await captureCanvas(3);
+    if (!canvas) return;
 
-      const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'));
-      if (!blob) throw new Error("Could not create image blob");
+    const base64Data = canvas.toDataURL("image/png").split(",")[1];
+    const fileName = `ShareBill.png`;
 
-      const fileName = `Bill-${config.month}.png`;
-      const file = new File([blob], fileName, { type: 'image/png' });
+    // Prothome file-ti Cache-e save kora hoy share korar jonno
+    const saveFile = await Filesystem.writeFile({
+      path: fileName,
+      data: base64Data,
+      directory: Directory.Cache
+    });
 
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: `Electricity Bill - ${config.month}`,
-          text: `Utility Bill Split for ${config.month}`
-        });
-      } else {
-        handleSaveDirectly();
-      }
-    } catch (e: any) {
-      console.error("Share attempt failed:", e);
-      if (e.name !== 'AbortError') {
-        alert("Share failed: " + (e.message || "Please try 'Save to Gallery' instead."));
-      }
-    } finally {
-      setIsSharing(false);
-    }
-  };
+    // Native Share dialog call
+    await Share.share({
+      title: 'Electricity Bill',
+      text: `${translateMonth(config.month)} Month's Bill Report`,
+      files: [saveFile.uri],
+    });
+  } catch (e) {
+    console.error('Sharing failed', e);
+    alert("Could not open share menu.");
+  } finally {
+    setIsSharing(false);
+  }
+};
 
   const billYear = config.dateGenerated.split('-')[0];
   const formattedTime = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
